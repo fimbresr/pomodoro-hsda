@@ -1,5 +1,5 @@
 // Service Worker — Enfoque HSDA
-const CACHE = "enfoque-hsda-v3";
+const CACHE = "enfoque-hsda-v4";
 const ASSETS = [
   "./",
   "./index.html",
