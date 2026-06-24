@@ -208,6 +208,8 @@
   .toggle.on { background: var(--brand); border-color: var(--brand); }
   .toggle::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: var(--shadow-sm); transition: transform 0.25s; }
   .toggle.on::after { transform: translateX(20px); }
+  .test-sound { border: 1px solid var(--line); background: var(--track); color: var(--brand); font-family: inherit; font-weight: 600; font-size: 0.8rem; padding: 8px 14px; border-radius: 100px; cursor: pointer; }
+  .test-sound:active { transform: scale(0.94); }
 
   @keyframes pop { 0%,100% { transform: scale(1); } 50% { transform: scale(1.03); } }
   .pulsing { animation: pop 2.4s ease-in-out infinite; }
@@ -234,25 +236,54 @@ const store = {
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
 };
 
+// Un solo AudioContext compartido; los móviles exigen desbloquearlo con un toque.
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) {
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch {}
+  }
+  return audioCtx;
+}
+function unlockAudio() {
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  if (ctx.state === "suspended") ctx.resume().catch(() => {});
+  try { // buffer silencioso: desbloquea el audio en iOS/Android
+    const b = ctx.createBuffer(1, 1, 22050);
+    const s = ctx.createBufferSource();
+    s.buffer = b; s.connect(ctx.destination); s.start(0);
+  } catch {}
+}
 function beep() {
-  // Campanita suave de 3 notas ascendentes: audible y clara, sin ser estridente.
+  // Campanita de 4 notas ascendentes, audible y clara.
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  if (ctx.state === "suspended") ctx.resume().catch(() => {});
+  const master = ctx.createGain();
+  master.gain.value = 0.95;            // volumen alto
+  master.connect(ctx.destination);
+  const notes = [659.25, 830.61, 987.77, 1318.51]; // E5 · G#5 · B5 · E6
+  notes.forEach((freq, i) => {
+    const start = ctx.currentTime + i * 0.13;
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = "sine";
+    o.frequency.value = freq;
+    o.connect(g); g.connect(master);
+    g.gain.setValueAtTime(0.0001, start);
+    g.gain.exponentialRampToValueAtTime(0.85, start + 0.03);   // ataque suave
+    g.gain.exponentialRampToValueAtTime(0.0001, start + 0.55); // decaimiento natural
+    o.start(start); o.stop(start + 0.57);
+  });
+}
+function notify(msg) {
+  // Notificación del sistema: el teléfono la sonará/vibrará según sus ajustes.
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const master = ctx.createGain();
-    master.gain.value = 0.5;            // volumen general (más fuerte que antes)
-    master.connect(ctx.destination);
-    const notes = [659.25, 830.61, 987.77]; // E5 · G#5 · B5 (acorde agradable)
-    notes.forEach((freq, i) => {
-      const start = ctx.currentTime + i * 0.14;
-      const o = ctx.createOscillator(), g = ctx.createGain();
-      o.type = "triangle";              // timbre cálido, no chillón
-      o.frequency.value = freq;
-      o.connect(g); g.connect(master);
-      g.gain.setValueAtTime(0.0001, start);
-      g.gain.exponentialRampToValueAtTime(0.6, start + 0.04);   // ataque suave
-      g.gain.exponentialRampToValueAtTime(0.0001, start + 0.6); // decaimiento natural
-      o.start(start); o.stop(start + 0.62);
-    });
+    if ("Notification" in window && Notification.permission === "granted") {
+      new Notification("Enfoque HSDA", {
+        body: msg, icon: "icons/icon-192.png", tag: "pomo-enfoque",
+        vibrate: [200, 100, 200], renotify: true,
+      });
+    }
   } catch {}
 }
 
@@ -316,6 +347,17 @@ function App() {
     return () => window.removeEventListener("beforeinstallprompt", h);
   }, []);
 
+  // Desbloquea el audio en el primer toque/click (requisito de los navegadores móviles)
+  useEffect(() => {
+    const onGesture = () => unlockAudio();
+    window.addEventListener("pointerdown", onGesture);
+    window.addEventListener("touchstart", onGesture);
+    return () => {
+      window.removeEventListener("pointerdown", onGesture);
+      window.removeEventListener("touchstart", onGesture);
+    };
+  }, []);
+
   const switchMode = useCallback((next, auto = false) => {
     setMode(next);
     setSecondsLeft(settings[next] * 60);
@@ -323,8 +365,11 @@ function App() {
   }, [settings]);
 
   const handleComplete = useCallback(() => {
-    if (settings.sound) beep();
-    if (navigator.vibrate) navigator.vibrate([120, 60, 120]);
+    if (settings.sound) {
+      beep();
+      notify(mode === "focus" ? "Tiempo de enfoque terminado. Toma un descanso." : "Descanso terminado. A enfocarse.");
+    }
+    if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 200]);
     if (mode === "focus") {
       setCompleted((c) => c + 1);
       setFocusMinutes((m) => m + settings.focus);
@@ -353,7 +398,14 @@ function App() {
     document.title = `${m}:${s} · ${cfg.label}`;
   }, [secondsLeft, cfg.label]);
 
-  const toggleRun = () => { if (!running && secondsLeft === 0) setSecondsLeft(totalSeconds); setRunning((r) => !r); };
+  const toggleRun = () => {
+    unlockAudio(); // desbloquea el audio dentro del gesto del usuario (clave en móvil)
+    if (settings.sound && "Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission().catch(() => {});
+    }
+    if (!running && secondsLeft === 0) setSecondsLeft(totalSeconds);
+    setRunning((r) => !r);
+  };
   const reset = () => { setRunning(false); setSecondsLeft(totalSeconds); };
   const skip = () => { setRunning(false); handleComplete(); };
 
@@ -491,7 +543,10 @@ function App() {
         </div>
         <div className="setting">
           <div className="setting-info"><span className="setting-name">Sonido al terminar</span><span className="setting-desc">Alerta y vibración</span></div>
-          <div className={`toggle ${settings.sound ? "on" : ""}`} onClick={() => setSettings((s) => ({ ...s, sound: !s.sound }))} role="switch" aria-checked={settings.sound} />
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <button className="test-sound" onClick={() => { unlockAudio(); beep(); if (navigator.vibrate) navigator.vibrate([200,100,200]); }}>Probar</button>
+            <div className={`toggle ${settings.sound ? "on" : ""}`} onClick={() => setSettings((s) => ({ ...s, sound: !s.sound }))} role="switch" aria-checked={settings.sound} />
+          </div>
         </div>
       </div>
     </div>
