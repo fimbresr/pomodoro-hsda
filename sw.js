@@ -1,5 +1,5 @@
 // Service Worker — Enfoque HSDA
-const CACHE = "enfoque-hsda-v5";
+const CACHE = "enfoque-hsda-v6";
 const ASSETS = [
   "./",
   "./index.html",
@@ -34,13 +34,31 @@ self.addEventListener("activate", (e) => {
 });
 
 self.addEventListener("fetch", (e) => {
-  if (e.request.method !== "GET") return;
-  e.respondWith(
-    caches.match(e.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(e.request).then((res) => {
+  const req = e.request;
+  if (req.method !== "GET") return;
+
+  const isHTML = req.mode === "navigate" || (req.headers.get("accept") || "").includes("text/html");
+
+  if (isHTML) {
+    // network-first para el HTML: siempre intenta la versión más reciente,
+    // y solo usa la caché si no hay conexión. Así las actualizaciones llegan sin reabrir.
+    e.respondWith(
+      fetch(req).then((res) => {
         const copy = res.clone();
-        caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});
+        caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
+        return res;
+      }).catch(() => caches.match(req).then((c) => c || caches.match("./index.html")))
+    );
+    return;
+  }
+
+  // cache-first para el resto (fuentes, íconos, librerías): rápido y estable.
+  e.respondWith(
+    caches.match(req).then((cached) => {
+      if (cached) return cached;
+      return fetch(req).then((res) => {
+        const copy = res.clone();
+        caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
         return res;
       }).catch(() => cached);
     })
