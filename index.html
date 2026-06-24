@@ -31,18 +31,43 @@
     --bg-grad-a: #f7f9fb;
     --bg-grad-b: #e4e9f0;
     --card: #ffffff;
+    --input-bg: #fafbfd;
     --ink: #2a3a4d;
     --ink-soft: #6a7b8e;
     --ink-faint: #9aa8b8;
     --line: #e6ebf1;
     --track: #e9eef4;
 
-    --focus: #3C5876;
-    --short: #4f8a76;
-    --long:  #b07c45;
+    --focus: #3C5876;  --focus-deep: #2c4258;
+    --short: #4f8a76;  --short-deep: #3a6657;
+    --long:  #b07c45;  --long-deep:  #8c6035;
 
     --shadow-sm: 0 2px 10px rgba(44,66,88,0.06);
     --shadow-md: 0 18px 50px -20px rgba(44,66,88,0.28);
+  }
+
+  body[data-theme="dark"] {
+    --brand: #7fa0c0;
+    --brand-deep: #5d7d9c;
+    --brand-soft: #6c8298;
+
+    --bg: #0e1721;
+    --bg-grad-a: #17242f;
+    --bg-grad-b: #0a121a;
+    --card: #18242f;
+    --input-bg: #121d27;
+    --ink: #e7eef5;
+    --ink-soft: #a3b4c4;
+    --ink-faint: #6f8090;
+    --line: #273543;
+    --track: #243341;
+
+    --focus: #7fa0c0;  --focus-deep: #5d7d9c;
+    --short: #6fb39c;  --short-deep: #4e8773;
+    --long:  #d29a5f;  --long-deep:  #a87544;
+
+    --shadow-sm: 0 2px 10px rgba(0,0,0,0.35);
+    --shadow-md: 0 18px 50px -20px rgba(0,0,0,0.6);
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -70,9 +95,14 @@
   }
   .shell { width: 100%; max-width: 440px; display: flex; flex-direction: column; align-items: center; }
 
+  .app.m-focus { --accent: var(--focus); --accent-deep: var(--focus-deep); }
+  .app.m-short { --accent: var(--short); --accent-deep: var(--short-deep); }
+  .app.m-long  { --accent: var(--long);  --accent-deep: var(--long-deep); }
+
   /* ---------- Header ---------- */
   .topbar { width: 100%; display: flex; align-items: center; justify-content: space-between; margin-bottom: clamp(16px, 4vh, 30px); }
   .logo-h { height: 34px; width: auto; display: block; }
+  .topbar-actions { display: flex; gap: 10px; }
   .icon-btn {
     width: 42px; height: 42px; border-radius: 13px; border: 1px solid var(--line);
     background: var(--card); color: var(--brand); display: grid; place-items: center;
@@ -126,7 +156,7 @@
   .tasks-count { font-size: 0.74rem; color: var(--ink-faint); }
   .task-add { display: flex; gap: 8px; margin-bottom: 12px; }
   .task-add input {
-    flex: 1; border: 1px solid var(--line); background: #fafbfd; border-radius: 12px;
+    flex: 1; border: 1px solid var(--line); background: var(--input-bg); border-radius: 12px;
     padding: 11px 13px; font-family: inherit; font-size: 0.9rem; color: var(--ink); outline: none;
     transition: border-color 0.2s;
   }
@@ -137,7 +167,7 @@
   }
   .task-add button:active { transform: scale(0.93); }
   .task-list { list-style: none; display: flex; flex-direction: column; gap: 2px; }
-  .task-item { display: flex; align-items: center; gap: 11px; padding: 10px 4px; border-bottom: 1px solid #f1f4f8; }
+  .task-item { display: flex; align-items: center; gap: 11px; padding: 10px 4px; border-bottom: 1px solid var(--line); }
   .task-item:last-child { border-bottom: 0; }
   .check { flex: none; width: 22px; height: 22px; border-radius: 7px; border: 2px solid var(--brand-soft); cursor: pointer; display: grid; place-items: center; transition: background 0.2s, border-color 0.2s; }
   .check.done { background: var(--brand); border-color: var(--brand); }
@@ -170,11 +200,11 @@
   .setting-info { display: flex; flex-direction: column; gap: 2px; }
   .setting-name { font-weight: 500; font-size: 0.92rem; color: var(--ink); }
   .setting-desc { font-size: 0.72rem; color: var(--ink-faint); }
-  .stepper { display: flex; align-items: center; gap: 4px; background: #f3f6f9; border: 1px solid var(--line); border-radius: 100px; padding: 4px; }
-  .stepper button { width: 34px; height: 34px; border-radius: 50%; border: 0; cursor: pointer; background: #fff; color: var(--brand); font-size: 1.2rem; line-height: 1; display: grid; place-items: center; font-family: inherit; box-shadow: var(--shadow-sm); }
+  .stepper { display: flex; align-items: center; gap: 4px; background: var(--track); border: 1px solid var(--line); border-radius: 100px; padding: 4px; }
+  .stepper button { width: 34px; height: 34px; border-radius: 50%; border: 0; cursor: pointer; background: var(--card); color: var(--brand); font-size: 1.2rem; line-height: 1; display: grid; place-items: center; font-family: inherit; box-shadow: var(--shadow-sm); }
   .stepper button:active { transform: scale(0.9); }
   .stepper span { min-width: 50px; text-align: center; font-variant-numeric: tabular-nums; font-weight: 800; font-size: 0.9rem; color: var(--ink); }
-  .toggle { width: 50px; height: 30px; border-radius: 100px; border: 1px solid var(--line); background: #e9eef4; position: relative; cursor: pointer; transition: background 0.25s; }
+  .toggle { width: 50px; height: 30px; border-radius: 100px; border: 1px solid var(--line); background: var(--track); position: relative; cursor: pointer; transition: background 0.25s; }
   .toggle.on { background: var(--brand); border-color: var(--brand); }
   .toggle::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: var(--shadow-sm); transition: transform 0.25s; }
   .toggle.on::after { transform: translateX(20px); }
@@ -233,6 +263,8 @@ const Icon = {
   skip: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 5l9 7-9 7V5ZM19 5v14"/></svg>,
   gear: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8 6 18M18 6l1.8-1.8"/></svg>,
   check: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12l5 5L20 6"/></svg>,
+  moon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>,
+  sun: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8 6 18M18 6l1.8-1.8"/></svg>,
 };
 
 function Stepper({ value, min, max, step, onChange, suffix }) {
@@ -256,6 +288,11 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [tasks, setTasks] = useState(() => store.get("pomo-tasks", []));
   const [draft, setDraft] = useState("");
+  const [theme, setTheme] = useState(() => {
+    const saved = store.get("pomo-theme", null);
+    if (saved === "dark" || saved === "light") return saved;
+    return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  });
   const [deferred, setDeferred] = useState(null);   // PWA install prompt
   const intervalRef = useRef(null);
 
@@ -264,6 +301,12 @@ function App() {
 
   useEffect(() => { store.set("pomo-settings", settings); }, [settings]);
   useEffect(() => { store.set("pomo-tasks", tasks); }, [tasks]);
+  useEffect(() => {
+    document.body.dataset.theme = theme;
+    store.set("pomo-theme", theme);
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute("content", theme === "dark" ? "#0e1721" : "#3C5876");
+  }, [theme]);
   useEffect(() => { if (!running) setSecondsLeft(settings[mode] * 60); }, [mode, settings.focus, settings.short, settings.long]);
 
   // PWA install prompt capture
@@ -329,15 +372,21 @@ function App() {
   const offset = C * (1 - progress);
   const mm = Math.floor(secondsLeft / 60).toString().padStart(2, "0");
   const ss = (secondsLeft % 60).toString().padStart(2, "0");
-  const accentVars = { "--accent": cfg.accent, "--accent-deep": cfg.deep };
   const doneCount = tasks.filter((t) => t.done).length;
+  const logoSrc = theme === "dark" ? "assets/logo-horizontal-blanco.png" : "assets/logo-horizontal.png";
 
   return (
-    <div className="app" style={accentVars}>
+    <div className={`app m-${mode}`}>
       <div className="shell">
         <div className="topbar">
-          <img className="logo-h" src="assets/logo-horizontal.png" alt="Hospital San Diego de Alcalá" />
-          <button className="icon-btn" onClick={() => setShowSettings(true)} aria-label="Ajustes">{Icon.gear}</button>
+          <img className="logo-h" src={logoSrc} alt="Hospital San Diego de Alcalá" />
+          <div className="topbar-actions">
+            <button className="icon-btn" onClick={() => setTheme((t) => t === "dark" ? "light" : "dark")}
+              aria-label={theme === "dark" ? "Modo claro" : "Modo oscuro"}>
+              {theme === "dark" ? Icon.sun : Icon.moon}
+            </button>
+            <button className="icon-btn" onClick={() => setShowSettings(true)} aria-label="Ajustes">{Icon.gear}</button>
+          </div>
         </div>
 
         <div className="tabs" role="tablist">

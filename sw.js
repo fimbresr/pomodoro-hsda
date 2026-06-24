@@ -1,10 +1,11 @@
 // Service Worker — Enfoque HSDA
-const CACHE = "enfoque-hsda-v2";
+const CACHE = "enfoque-hsda-v3";
 const ASSETS = [
   "./",
   "./index.html",
   "./manifest.json",
   "./assets/logo-horizontal.png",
+  "./assets/logo-horizontal-blanco.png",
   "./assets/simbolo.png",
   "./assets/avenir-light.ttf",
   "./assets/avenir-medium.ttf",
