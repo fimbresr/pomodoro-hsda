@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#3C5876" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="Enfoque HSDA" />
+<title>Enfoque · HSDA</title>
+
+<link rel="manifest" href="manifest.json" />
+<link rel="apple-touch-icon" href="icons/apple-touch-180.png" />
+
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<style>
+  @font-face { font-family: "Avenir"; src: url("assets/avenir-light.ttf") format("truetype"); font-weight: 300; font-display: swap; }
+  @font-face { font-family: "Avenir"; src: url("assets/avenir-medium.ttf") format("truetype"); font-weight: 500; font-display: swap; }
+  @font-face { font-family: "Avenir"; src: url("assets/avenir-black.ttf") format("truetype"); font-weight: 800; font-display: swap; }
+
+  :root {
+    --brand: #3C5876;
+    --brand-deep: #2c4258;
+    --brand-soft: #6f8aa6;
+
+    --bg: #eef1f5;
+    --bg-grad-a: #f7f9fb;
+    --bg-grad-b: #e4e9f0;
+    --card: #ffffff;
+    --ink: #2a3a4d;
+    --ink-soft: #6a7b8e;
+    --ink-faint: #9aa8b8;
+    --line: #e6ebf1;
+    --track: #e9eef4;
+
+    --focus: #3C5876;
+    --short: #4f8a76;
+    --long:  #b07c45;
+
+    --shadow-sm: 0 2px 10px rgba(44,66,88,0.06);
+    --shadow-md: 0 18px 50px -20px rgba(44,66,88,0.28);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    font-family: "Avenir", system-ui, sans-serif;
+    font-weight: 500;
+    color: var(--ink);
+    background: var(--bg);
+    min-height: 100dvh;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  #root { min-height: 100dvh; }
+
+  .app {
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: calc(env(safe-area-inset-top) + 18px) 18px calc(env(safe-area-inset-bottom) + 24px);
+    background:
+      radial-gradient(130% 60% at 50% -5%, var(--bg-grad-a), var(--bg-grad-b) 95%);
+    position: relative;
+  }
+  .shell { width: 100%; max-width: 440px; display: flex; flex-direction: column; align-items: center; }
+
+  /* ---------- Header ---------- */
+  .topbar { width: 100%; display: flex; align-items: center; justify-content: space-between; margin-bottom: clamp(16px, 4vh, 30px); }
+  .logo-h { height: 34px; width: auto; display: block; }
+  .icon-btn {
+    width: 42px; height: 42px; border-radius: 13px; border: 1px solid var(--line);
+    background: var(--card); color: var(--brand); display: grid; place-items: center;
+    cursor: pointer; box-shadow: var(--shadow-sm); transition: transform 0.3s, background 0.2s;
+  }
+  .icon-btn:active { transform: scale(0.92); }
+  .icon-btn svg { width: 20px; height: 20px; }
+
+  /* ---------- Mode tabs ---------- */
+  .tabs { display: inline-flex; gap: 3px; padding: 4px; border-radius: 100px; background: var(--card); border: 1px solid var(--line); box-shadow: var(--shadow-sm); margin-bottom: clamp(20px, 4vh, 34px); }
+  .tab { border: 0; background: transparent; color: var(--ink-soft); font-family: inherit; font-weight: 500; font-size: 0.8rem; padding: 9px 15px; border-radius: 100px; cursor: pointer; transition: color 0.25s, background 0.25s; white-space: nowrap; }
+  .tab.active { background: var(--accent); color: #fff; box-shadow: 0 4px 12px -3px var(--accent); }
+
+  /* ---------- Dial ---------- */
+  .dial-wrap { position: relative; width: min(72vw, 300px); aspect-ratio: 1; display: grid; place-items: center; }
+  .dial { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .dial-track { fill: none; stroke: var(--track); }
+  .dial-prog { fill: none; stroke: var(--accent); stroke-linecap: round; transition: stroke-dashoffset 0.4s linear, stroke 0.5s ease; }
+  .dial-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+  .time { font-family: "Avenir"; font-weight: 800; font-variant-numeric: tabular-nums; font-size: clamp(3.2rem, 16vw, 4.4rem); line-height: 1; color: var(--ink); letter-spacing: -0.01em; }
+  .phase-label { font-size: 0.68rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); font-weight: 800; }
+
+  .dots { display: flex; gap: 7px; margin-top: 16px; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--track); transition: background 0.3s, transform 0.3s; }
+  .dot.filled { background: var(--accent); transform: scale(1.2); }
+
+  /* ---------- Controls ---------- */
+  .controls { display: flex; align-items: center; gap: 16px; margin-top: clamp(18px, 4vh, 30px); }
+  .btn { border: 0; cursor: pointer; font-family: inherit; display: grid; place-items: center; transition: transform 0.15s; }
+  .btn:active { transform: scale(0.92); }
+  .btn-primary {
+    width: 80px; height: 80px; border-radius: 50%;
+    background: linear-gradient(155deg, var(--accent), var(--accent-deep));
+    color: #fff; box-shadow: 0 14px 30px -8px var(--accent), inset 0 1px 0 rgba(255,255,255,0.25);
+  }
+  .btn-primary svg { width: 30px; height: 30px; }
+  .btn-ghost { width: 54px; height: 54px; border-radius: 50%; background: var(--card); border: 1px solid var(--line); color: var(--ink-soft); box-shadow: var(--shadow-sm); }
+  .btn-ghost svg { width: 21px; height: 21px; }
+
+  /* ---------- Stats ---------- */
+  .stats { display: flex; align-items: center; gap: 26px; margin-top: clamp(20px, 4vh, 30px); }
+  .stat { text-align: center; }
+  .stat-val { font-family: "Avenir"; font-weight: 800; font-size: 1.4rem; color: var(--brand); }
+  .stat-lab { font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); margin-top: 2px; }
+  .stat-sep { width: 1px; height: 30px; background: var(--line); }
+
+  /* ---------- Tasks ---------- */
+  .tasks { width: 100%; margin-top: clamp(22px, 5vh, 34px); background: var(--card); border: 1px solid var(--line); border-radius: 22px; box-shadow: var(--shadow-sm); padding: 18px; }
+  .tasks-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .tasks-title { font-weight: 800; font-size: 0.95rem; color: var(--ink); }
+  .tasks-count { font-size: 0.74rem; color: var(--ink-faint); }
+  .task-add { display: flex; gap: 8px; margin-bottom: 12px; }
+  .task-add input {
+    flex: 1; border: 1px solid var(--line); background: #fafbfd; border-radius: 12px;
+    padding: 11px 13px; font-family: inherit; font-size: 0.9rem; color: var(--ink); outline: none;
+    transition: border-color 0.2s;
+  }
+  .task-add input:focus { border-color: var(--brand-soft); }
+  .task-add button {
+    flex: none; width: 44px; border: 0; border-radius: 12px; background: var(--brand); color: #fff;
+    font-size: 1.4rem; cursor: pointer; display: grid; place-items: center; line-height: 1;
+  }
+  .task-add button:active { transform: scale(0.93); }
+  .task-list { list-style: none; display: flex; flex-direction: column; gap: 2px; }
+  .task-item { display: flex; align-items: center; gap: 11px; padding: 10px 4px; border-bottom: 1px solid #f1f4f8; }
+  .task-item:last-child { border-bottom: 0; }
+  .check { flex: none; width: 22px; height: 22px; border-radius: 7px; border: 2px solid var(--brand-soft); cursor: pointer; display: grid; place-items: center; transition: background 0.2s, border-color 0.2s; }
+  .check.done { background: var(--brand); border-color: var(--brand); }
+  .check svg { width: 13px; height: 13px; color: #fff; opacity: 0; transition: opacity 0.2s; }
+  .check.done svg { opacity: 1; }
+  .task-text { flex: 1; font-size: 0.9rem; color: var(--ink); transition: color 0.2s; word-break: break-word; }
+  .task-text.done { color: var(--ink-faint); text-decoration: line-through; }
+  .task-del { flex: none; border: 0; background: transparent; color: var(--ink-faint); cursor: pointer; font-size: 1.1rem; padding: 4px 6px; border-radius: 8px; }
+  .task-del:active { color: #d9544f; }
+  .task-empty { text-align: center; color: var(--ink-faint); font-size: 0.85rem; padding: 14px 0; }
+
+  /* ---------- Install banner ---------- */
+  .install { width: 100%; margin-top: 16px; background: var(--brand); color: #fff; border-radius: 16px; padding: 13px 16px; display: flex; align-items: center; gap: 12px; box-shadow: var(--shadow-md); }
+  .install p { font-size: 0.84rem; line-height: 1.3; flex: 1; }
+  .install b { font-weight: 800; }
+  .install button { flex: none; border: 0; background: #fff; color: var(--brand); font-family: inherit; font-weight: 800; font-size: 0.82rem; padding: 9px 14px; border-radius: 10px; cursor: pointer; }
+  .install .x { background: transparent; color: rgba(255,255,255,0.7); padding: 6px; font-size: 1rem; }
+
+  .footer { margin-top: 22px; font-size: 0.66rem; color: var(--ink-faint); letter-spacing: 0.05em; text-align: center; }
+
+  /* ---------- Settings sheet ---------- */
+  .scrim { position: fixed; inset: 0; background: rgba(30,44,60,0.42); backdrop-filter: blur(3px); z-index: 20; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+  .scrim.open { opacity: 1; pointer-events: auto; }
+  .sheet { position: fixed; left: 0; right: 0; bottom: 0; background: var(--card); border-top-left-radius: 26px; border-top-right-radius: 26px; padding: 8px 22px calc(env(safe-area-inset-bottom) + 28px); z-index: 21; transform: translateY(105%); transition: transform 0.38s cubic-bezier(0.32,0.72,0,1); max-width: 480px; margin: 0 auto; box-shadow: 0 -20px 60px -20px rgba(44,66,88,0.3); }
+  .sheet.open { transform: translateY(0); }
+  .grab { width: 38px; height: 4px; border-radius: 4px; background: var(--line); margin: 8px auto 16px; }
+  .sheet h2 { font-weight: 800; font-size: 1.2rem; margin-bottom: 14px; color: var(--ink); }
+  .setting { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid var(--line); }
+  .setting:last-of-type { border-bottom: 0; }
+  .setting-info { display: flex; flex-direction: column; gap: 2px; }
+  .setting-name { font-weight: 500; font-size: 0.92rem; color: var(--ink); }
+  .setting-desc { font-size: 0.72rem; color: var(--ink-faint); }
+  .stepper { display: flex; align-items: center; gap: 4px; background: #f3f6f9; border: 1px solid var(--line); border-radius: 100px; padding: 4px; }
+  .stepper button { width: 34px; height: 34px; border-radius: 50%; border: 0; cursor: pointer; background: #fff; color: var(--brand); font-size: 1.2rem; line-height: 1; display: grid; place-items: center; font-family: inherit; box-shadow: var(--shadow-sm); }
+  .stepper button:active { transform: scale(0.9); }
+  .stepper span { min-width: 50px; text-align: center; font-variant-numeric: tabular-nums; font-weight: 800; font-size: 0.9rem; color: var(--ink); }
+  .toggle { width: 50px; height: 30px; border-radius: 100px; border: 1px solid var(--line); background: #e9eef4; position: relative; cursor: pointer; transition: background 0.25s; }
+  .toggle.on { background: var(--brand); border-color: var(--brand); }
+  .toggle::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: var(--shadow-sm); transition: transform 0.25s; }
+  .toggle.on::after { transform: translateX(20px); }
+
+  @keyframes pop { 0%,100% { transform: scale(1); } 50% { transform: scale(1.03); } }
+  .pulsing { animation: pop 2.4s ease-in-out infinite; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/app-jsx" id="app-src">
+const { useState, useEffect, useRef, useCallback } = React;
+
+const HOSPITAL = { name: "Hospital San Diego de Alcalá", unit: "Programa de Enfoque" };
+
+const MODES = {
+  focus: { key: "focus", label: "Enfoque",     accent: "#3C5876", deep: "#2c4258" },
+  short: { key: "short", label: "Pausa breve", accent: "#4f8a76", deep: "#3a6657" },
+  long:  { key: "long",  label: "Pausa larga", accent: "#b07c45", deep: "#8c6035" },
+};
+
+const DEFAULTS = { focus: 25, short: 5, long: 15, autoStart: true, sound: true, rounds: 4 };
+
+const store = {
+  get(k, fb) { try { const v = JSON.parse(localStorage.getItem(k)); return v ?? fb; } catch { return fb; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+};
+
+function beep(times = 2) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    let t = ctx.currentTime;
+    for (let i = 0; i < times; i++) {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value = 620 + i * 200; o.type = "sine";
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.28, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.32);
+      o.start(t); o.stop(t + 0.34); t += 0.4;
+    }
+  } catch {}
+}
+
+const Icon = {
+  play: <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.54.84l10-6.5a1 1 0 0 0 0-1.68l-10-6.5A1 1 0 0 0 8 5.5Z"/></svg>,
+  pause: <svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4.2" height="14" rx="1.4"/><rect x="13.8" y="5" width="4.2" height="14" rx="1.4"/></svg>,
+  reset: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5"/></svg>,
+  skip: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 5l9 7-9 7V5ZM19 5v14"/></svg>,
+  gear: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8 6 18M18 6l1.8-1.8"/></svg>,
+  check: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12l5 5L20 6"/></svg>,
+};
+
+function Stepper({ value, min, max, step, onChange, suffix }) {
+  return (
+    <div className="stepper">
+      <button onClick={() => onChange(Math.max(min, value - step))} aria-label="Menos">−</button>
+      <span>{value}{suffix}</span>
+      <button onClick={() => onChange(Math.min(max, value + step))} aria-label="Más">+</button>
+    </div>
+  );
+}
+
+function App() {
+  const [settings, setSettings] = useState(() => ({ ...DEFAULTS, ...store.get("pomo-settings", {}) }));
+  const [mode, setMode] = useState("focus");
+  const [secondsLeft, setSecondsLeft] = useState(settings.focus * 60);
+  const [running, setRunning] = useState(false);
+  const [completed, setCompleted] = useState(0);
+  const [roundInCycle, setRoundInCycle] = useState(0);
+  const [focusMinutes, setFocusMinutes] = useState(0);
+  const [showSettings, setShowSettings] = useState(false);
+  const [tasks, setTasks] = useState(() => store.get("pomo-tasks", []));
+  const [draft, setDraft] = useState("");
+  const [deferred, setDeferred] = useState(null);   // PWA install prompt
+  const intervalRef = useRef(null);
+
+  const cfg = MODES[mode];
+  const totalSeconds = settings[mode] * 60;
+
+  useEffect(() => { store.set("pomo-settings", settings); }, [settings]);
+  useEffect(() => { store.set("pomo-tasks", tasks); }, [tasks]);
+  useEffect(() => { if (!running) setSecondsLeft(settings[mode] * 60); }, [mode, settings.focus, settings.short, settings.long]);
+
+  // PWA install prompt capture
+  useEffect(() => {
+    const h = (e) => { e.preventDefault(); setDeferred(e); };
+    window.addEventListener("beforeinstallprompt", h);
+    return () => window.removeEventListener("beforeinstallprompt", h);
+  }, []);
+
+  const switchMode = useCallback((next, auto = false) => {
+    setMode(next);
+    setSecondsLeft(settings[next] * 60);
+    setRunning(auto && settings.autoStart);
+  }, [settings]);
+
+  const handleComplete = useCallback(() => {
+    if (settings.sound) beep();
+    if (navigator.vibrate) navigator.vibrate([120, 60, 120]);
+    if (mode === "focus") {
+      setCompleted((c) => c + 1);
+      setFocusMinutes((m) => m + settings.focus);
+      const nextRound = roundInCycle + 1;
+      if (nextRound >= settings.rounds) { setRoundInCycle(0); switchMode("long", true); }
+      else { setRoundInCycle(nextRound); switchMode("short", true); }
+    } else {
+      switchMode("focus", true);
+    }
+  }, [mode, roundInCycle, settings, switchMode]);
+
+  useEffect(() => {
+    if (!running) return;
+    intervalRef.current = setInterval(() => {
+      setSecondsLeft((s) => {
+        if (s <= 1) { clearInterval(intervalRef.current); setRunning(false); setTimeout(handleComplete, 0); return 0; }
+        return s - 1;
+      });
+    }, 1000);
+    return () => clearInterval(intervalRef.current);
+  }, [running, handleComplete]);
+
+  useEffect(() => {
+    const m = Math.floor(secondsLeft / 60).toString().padStart(2, "0");
+    const s = (secondsLeft % 60).toString().padStart(2, "0");
+    document.title = `${m}:${s} · ${cfg.label}`;
+  }, [secondsLeft, cfg.label]);
+
+  const toggleRun = () => { if (!running && secondsLeft === 0) setSecondsLeft(totalSeconds); setRunning((r) => !r); };
+  const reset = () => { setRunning(false); setSecondsLeft(totalSeconds); };
+  const skip = () => { setRunning(false); handleComplete(); };
+
+  const addTask = () => {
+    const t = draft.trim(); if (!t) return;
+    setTasks((arr) => [...arr, { id: Date.now(), text: t, done: false }]);
+    setDraft("");
+  };
+  const toggleTask = (id) => setTasks((arr) => arr.map((t) => t.id === id ? { ...t, done: !t.done } : t));
+  const delTask = (id) => setTasks((arr) => arr.filter((t) => t.id !== id));
+
+  const install = async () => { if (!deferred) return; deferred.prompt(); await deferred.userChoice; setDeferred(null); };
+
+  const R = 138, C = 2 * Math.PI * R;
+  const progress = totalSeconds ? secondsLeft / totalSeconds : 0;
+  const offset = C * (1 - progress);
+  const mm = Math.floor(secondsLeft / 60).toString().padStart(2, "0");
+  const ss = (secondsLeft % 60).toString().padStart(2, "0");
+  const accentVars = { "--accent": cfg.accent, "--accent-deep": cfg.deep };
+  const doneCount = tasks.filter((t) => t.done).length;
+
+  return (
+    <div className="app" style={accentVars}>
+      <div className="shell">
+        <div className="topbar">
+          <img className="logo-h" src="assets/logo-horizontal.png" alt="Hospital San Diego de Alcalá" />
+          <button className="icon-btn" onClick={() => setShowSettings(true)} aria-label="Ajustes">{Icon.gear}</button>
+        </div>
+
+        <div className="tabs" role="tablist">
+          {Object.values(MODES).map((m) => (
+            <button key={m.key} role="tab" aria-selected={mode === m.key}
+              className={`tab ${mode === m.key ? "active" : ""}`} onClick={() => switchMode(m.key)}>
+              {m.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="dial-wrap">
+          <svg className="dial" viewBox="0 0 320 320">
+            <circle className="dial-track" cx="160" cy="160" r={R} strokeWidth="13" />
+            <circle className="dial-prog" cx="160" cy="160" r={R} strokeWidth="13" strokeDasharray={C} strokeDashoffset={offset} />
+          </svg>
+          <div className={`dial-center ${running ? "pulsing" : ""}`}>
+            <span className="time">{mm}:{ss}</span>
+            <span className="phase-label">{cfg.label}</span>
+          </div>
+        </div>
+
+        <div className="dots">
+          {Array.from({ length: settings.rounds }).map((_, i) => (
+            <span key={i} className={`dot ${i < roundInCycle ? "filled" : ""}`} />
+          ))}
+        </div>
+
+        <div className="controls">
+          <button className="btn btn-ghost" onClick={reset} aria-label="Reiniciar">{Icon.reset}</button>
+          <button className="btn btn-primary" onClick={toggleRun} aria-label={running ? "Pausar" : "Iniciar"}>
+            {running ? Icon.pause : Icon.play}
+          </button>
+          <button className="btn btn-ghost" onClick={skip} aria-label="Saltar">{Icon.skip}</button>
+        </div>
+
+        <div className="stats">
+          <div className="stat"><div className="stat-val">{completed}</div><div className="stat-lab">Sesiones</div></div>
+          <div className="stat-sep" />
+          <div className="stat"><div className="stat-val">{focusMinutes}</div><div className="stat-lab">Min enfoque</div></div>
+        </div>
+
+        {/* Lista de tareas por sesión */}
+        <div className="tasks">
+          <div className="tasks-head">
+            <span className="tasks-title">Tareas de la sesión</span>
+            <span className="tasks-count">{doneCount}/{tasks.length}</span>
+          </div>
+          <div className="task-add">
+            <input value={draft} onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && addTask()}
+              placeholder="¿En qué te vas a enfocar?" maxLength={80} />
+            <button onClick={addTask} aria-label="Agregar tarea">+</button>
+          </div>
+          <ul className="task-list">
+            {tasks.length === 0 && <li className="task-empty">Aún no hay tareas. Agrega tu primer objetivo.</li>}
+            {tasks.map((t) => (
+              <li className="task-item" key={t.id}>
+                <div className={`check ${t.done ? "done" : ""}`} onClick={() => toggleTask(t.id)} role="checkbox" aria-checked={t.done}>{Icon.check}</div>
+                <span className={`task-text ${t.done ? "done" : ""}`} onClick={() => toggleTask(t.id)}>{t.text}</span>
+                <button className="task-del" onClick={() => delTask(t.id)} aria-label="Eliminar">✕</button>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {deferred && (
+          <div className="install">
+            <p><b>Instala la app</b> en tu pantalla de inicio para abrirla con un toque.</p>
+            <button onClick={install}>Instalar</button>
+            <button className="x" onClick={() => setDeferred(null)} aria-label="Cerrar">✕</button>
+          </div>
+        )}
+
+        <div className="footer">{HOSPITAL.name} · {HOSPITAL.unit}</div>
+      </div>
+
+      {/* Ajustes */}
+      <div className={`scrim ${showSettings ? "open" : ""}`} onClick={() => setShowSettings(false)} />
+      <div className={`sheet ${showSettings ? "open" : ""}`} role="dialog" aria-label="Ajustes">
+        <div className="grab" />
+        <h2>Ajustes</h2>
+        <div className="setting">
+          <div className="setting-info"><span className="setting-name">Duración del enfoque</span><span className="setting-desc">Tiempo de concentración</span></div>
+          <Stepper value={settings.focus} min={5} max={90} step={5} suffix=" min" onChange={(v) => setSettings((s) => ({ ...s, focus: v }))} />
+        </div>
+        <div className="setting">
+          <div className="setting-info"><span className="setting-name">Pausa breve</span><span className="setting-desc">Descanso entre sesiones</span></div>
+          <Stepper value={settings.short} min={1} max={30} step={1} suffix=" min" onChange={(v) => setSettings((s) => ({ ...s, short: v }))} />
+        </div>
+        <div className="setting">
+          <div className="setting-info"><span className="setting-name">Pausa larga</span><span className="setting-desc">Descanso tras varias rondas</span></div>
+          <Stepper value={settings.long} min={5} max={45} step={5} suffix=" min" onChange={(v) => setSettings((s) => ({ ...s, long: v }))} />
+        </div>
+        <div className="setting">
+          <div className="setting-info"><span className="setting-name">Rondas por ciclo</span><span className="setting-desc">Enfoques antes de la pausa larga</span></div>
+          <Stepper value={settings.rounds} min={2} max={8} step={1} suffix="" onChange={(v) => setSettings((s) => ({ ...s, rounds: v }))} />
+        </div>
+        <div className="setting">
+          <div className="setting-info"><span className="setting-name">Inicio automático</span><span className="setting-desc">Encadena enfoque y pausas</span></div>
+          <div className={`toggle ${settings.autoStart ? "on" : ""}`} onClick={() => setSettings((s) => ({ ...s, autoStart: !s.autoStart }))} role="switch" aria-checked={settings.autoStart} />
+        </div>
+        <div className="setting">
+          <div className="setting-info"><span className="setting-name">Sonido al terminar</span><span className="setting-desc">Alerta y vibración</span></div>
+          <div className={`toggle ${settings.sound ? "on" : ""}`} onClick={() => setSettings((s) => ({ ...s, sound: !s.sound }))} role="switch" aria-checked={settings.sound} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+
+<script>
+  // Compila el JSX con runtime CLÁSICO (evita imports del runtime automático) y lo ejecuta.
+  (function () {
+    try {
+      var src = document.getElementById("app-src").textContent;
+      var out = Babel.transform(src, { presets: [["react", { runtime: "classic" }]] }).code;
+      (0, eval)(out);
+    } catch (err) {
+      document.getElementById("root").innerHTML =
+        '<p style="padding:24px;font-family:sans-serif;color:#b00">Error al iniciar: ' + err.message + "</p>";
+      console.error(err);
+    }
+    // Registrar service worker (PWA)
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("sw.js").catch(function () {});
+      });
+    }
+  })();
+</script>
+</body>
+</html>
